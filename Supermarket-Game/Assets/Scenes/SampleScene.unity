@@ -872,27 +872,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7939105204d5a41a28b6acb89add6841, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.22
+      value: -1.2079914
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7939105204d5a41a28b6acb89add6841, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.31265
+      value: 0.32
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7939105204d5a41a28b6acb89add6841, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.89
+      value: -2.9842017
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7939105204d5a41a28b6acb89add6841, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: -0.23604877
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7939105204d5a41a28b6acb89add6841, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7939105204d5a41a28b6acb89add6841, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0.9717412
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7939105204d5a41a28b6acb89add6841, type: 3}
       propertyPath: m_LocalRotation.z
@@ -904,7 +904,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7939105204d5a41a28b6acb89add6841, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 207.307
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7939105204d5a41a28b6acb89add6841, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -1048,7 +1048,7 @@ CharacterController:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Height: 0.04
+  m_Height: 0.038
   m_Radius: 0.012
   m_SlopeLimit: 45
   m_StepOffset: 0.3
@@ -1118,7 +1118,7 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.012
-  m_Height: 0.04
+  m_Height: 0.038
   m_Direction: 1
   m_Center: {x: 0, y: 0.012, z: 0}
 --- !u!23 &1054921741
