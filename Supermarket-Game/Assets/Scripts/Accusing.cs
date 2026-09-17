@@ -1,21 +1,28 @@
-using System.Data.Common;
-using NUnit.Framework;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 public class Accusing : MonoBehaviour
 {
     [Header("Interaction")]
 
-    public float AccuseRange = 3f;
+    [SerializeField] private float accuseRange = 3f;
+    [SerializeField] private GameObject accusePrompt;
 
-    
     private CustomerController closestCustomer;
+
+    private void Awake()
+    {
+        SetAccusePromptVisible(false);
+    }
 
     private void Update()
     {
         FindClosestCustomer();
+
+        if (closestCustomer != null && Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame)
+        {
+            AccuseCustomer();
+        }
     }
 
     private void FindClosestCustomer()
@@ -24,7 +31,7 @@ public class Accusing : MonoBehaviour
             FindObjectsByType<CustomerController>();
 
         CustomerController nearest = null;
-        float closestDistance = AccuseRange;
+        float closestDistance = accuseRange;
 
         foreach (CustomerController customer in customers)
         {
@@ -42,17 +49,8 @@ public class Accusing : MonoBehaviour
 
         if (nearest != closestCustomer)
         {
-            if (closestCustomer != null)
-            {
-                closestCustomer.AccuseButton.SetActive(false);
-            }
-
             closestCustomer = nearest;
-
-            if (closestCustomer != null)
-            {
-                closestCustomer.AccuseButton.SetActive(true);
-            }
+            SetAccusePromptVisible(closestCustomer != null);
         }
     }
 
@@ -66,22 +64,16 @@ public class Accusing : MonoBehaviour
         CustomerController accusedCustomer = closestCustomer;
 
         accusedCustomer.Accused();
-
-        accusedCustomer.AccuseButton.SetActive(false);
-
         closestCustomer = null;
-
-
+        SetAccusePromptVisible(false);
     }
 
-
-
-
-
-
-
-
-
-
+    private void SetAccusePromptVisible(bool isVisible)
+    {
+        if (accusePrompt != null)
+        {
+            accusePrompt.SetActive(isVisible);
+        }
+    }
 
 }

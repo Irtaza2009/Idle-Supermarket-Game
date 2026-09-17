@@ -13,8 +13,6 @@ public class CustomerController : MonoBehaviour
     private float browseTimer;
     private CustomerState state;
 
-    public GameObject AccuseButton;
-
     private enum CustomerState
     {
         GoingToAisle,
