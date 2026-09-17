@@ -38,7 +38,8 @@ public class CustomerManager : MonoBehaviour
     private void SpawnCustomer()
     {
         CustomerController customer = Instantiate(customerPrefab, spawnPoint.position, spawnPoint.rotation);
-        customer.Initialize(spawnPoint, aislePoints);
+        bool isStealer = Random.value < 0.2f;
+        customer.Initialize(spawnPoint, aislePoints, isStealer);
         activeCustomers.Add(customer);
     }
 

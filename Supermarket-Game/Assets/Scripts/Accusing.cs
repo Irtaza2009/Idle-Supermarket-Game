@@ -7,6 +7,7 @@ public class Accusing : MonoBehaviour
 
     [SerializeField] private float accuseRange = 3f;
     [SerializeField] private GameObject accusePrompt;
+    [SerializeField] private RatingSystem ratingSystem;
 
     private CustomerController closestCustomer;
 
@@ -64,6 +65,11 @@ public class Accusing : MonoBehaviour
         CustomerController accusedCustomer = closestCustomer;
 
         accusedCustomer.Accused();
+        if (ratingSystem != null)
+        {
+            ratingSystem.RecordAccusation(accusedCustomer.IsStealer);
+        }
+
         closestCustomer = null;
         SetAccusePromptVisible(false);
     }
