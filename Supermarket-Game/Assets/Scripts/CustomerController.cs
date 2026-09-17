@@ -9,6 +9,8 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private Transform[] aislePoints;
     [SerializeField] private float timeToBrowse = 3f;
     [SerializeField] private float arrivalDistance = 0.5f;
+    [SerializeField] private int minimumAisleVisits = 2;
+    [SerializeField] private int maximumAisleVisits = 4;
     [SerializeField] private GameObject reactionPanel;
     [SerializeField] private TMP_Text reactionText;
 
@@ -16,6 +18,9 @@ public class CustomerController : MonoBehaviour
     private float browseTimer;
     private CustomerState state;
     private bool isStealer;
+    private int aisleVisits;
+    private int totalAisleVisits;
+    private int previousAisleIndex = -1;
 
     private enum CustomerState
     {
@@ -76,8 +81,10 @@ public class CustomerController : MonoBehaviour
             return;
         }
 
-        Transform target = aislePoints[Random.Range(0, aislePoints.Length)];
-        agent.SetDestination(target.position);
+        minimumAisleVisits = Mathf.Max(1, minimumAisleVisits);
+        maximumAisleVisits = Mathf.Max(minimumAisleVisits, maximumAisleVisits);
+        totalAisleVisits = Random.Range(minimumAisleVisits, maximumAisleVisits + 1);
+        GoToNextAisle();
         state = CustomerState.GoingToAisle;
     }
 
@@ -95,7 +102,17 @@ public class CustomerController : MonoBehaviour
 
             if (browseTimer <= 0f)
             {
-                ReturnToSpawn();
+                aisleVisits++;
+
+                if (aisleVisits >= totalAisleVisits)
+                {
+                    ReturnToSpawn();
+                }
+                else
+                {
+                    GoToNextAisle();
+                    state = CustomerState.GoingToAisle;
+                }
             }
         }
         else if (state == CustomerState.Returning && HasReachedDestination())
@@ -124,6 +141,23 @@ public class CustomerController : MonoBehaviour
         agent.isStopped = false;
         agent.SetDestination(spawnPoint.position);
         state = CustomerState.Returning;
+    }
+
+    private void GoToNextAisle()
+    {
+        int nextAisleIndex = Random.Range(0, aislePoints.Length);
+
+        if (aislePoints.Length > 1)
+        {
+            while (nextAisleIndex == previousAisleIndex)
+            {
+                nextAisleIndex = Random.Range(0, aislePoints.Length);
+            }
+        }
+
+        previousAisleIndex = nextAisleIndex;
+        agent.isStopped = false;
+        agent.SetDestination(aislePoints[nextAisleIndex].position);
     }
 
     public void Accused()
