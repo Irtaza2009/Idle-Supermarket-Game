@@ -13,6 +13,8 @@ public class CustomerController : MonoBehaviour
     private float browseTimer;
     private CustomerState state;
 
+    public GameObject AccuseButton;
+
     private enum CustomerState
     {
         GoingToAisle,
@@ -84,5 +86,10 @@ public class CustomerController : MonoBehaviour
         agent.isStopped = false;
         agent.SetDestination(spawnPoint.position);
         state = CustomerState.Returning;
+    }
+
+    public void Accused()
+    {
+        Debug.Log("You Oloo");
     }
 }
