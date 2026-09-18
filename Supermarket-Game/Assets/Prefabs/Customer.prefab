@@ -452,6 +452,10 @@ MonoBehaviour:
   stuckCheckTime: 1.5
   stealChance: 0.35
   stealDisplayTime: 1
+  sightOrigin: {fileID: 0}
+  silhouetteColor: {r: 0.13207531, g: 0.13207531, b: 0.13207531, a: 1}
+  sightTransitionSpeed: 4
+  sightGracePeriod: 0.15
 --- !u!136 &4563473390054359921
 CapsuleCollider:
   m_ObjectHideFlags: 0

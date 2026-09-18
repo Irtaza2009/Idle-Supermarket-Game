@@ -23,6 +23,10 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private float stuckCheckTime = 1.5f;
     [SerializeField, Range(0f, 1f)] private float stealChance = 0.2f;
     [SerializeField] private float stealDisplayTime = 1f;
+    [SerializeField] private Transform sightOrigin;
+    [SerializeField] private Color silhouetteColor = Color.black;
+    [SerializeField] private float sightTransitionSpeed = 6f;
+    [SerializeField] private float sightGracePeriod = 0.12f;
 
     private NavMeshAgent agent;
     private float browseTimer;
@@ -41,6 +45,17 @@ public class CustomerController : MonoBehaviour
     private bool exitCashProcessed;
     private bool hasAttemptedSteal;
     private bool isStealing;
+    private bool isVisibleToCamera = true;
+    private bool targetSightVisible = true;
+    private bool reactionVisible;
+    private bool cashChangeVisible;
+    private float silhouetteAmount;
+    private float blockedSightTimer;
+    private float clearSightTimer;
+    private Renderer[] customerRenderers;
+    private MaterialPropertyBlock silhouetteProperties;
+    private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorProperty = Shader.PropertyToID("_Color");
 
     private enum CustomerState
     {
@@ -57,6 +72,18 @@ public class CustomerController : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
         agent.avoidancePriority = Random.Range(20, 80);
+        customerRenderers = GetComponentsInChildren<Renderer>(true);
+        silhouetteProperties = new MaterialPropertyBlock();
+
+        if (sightOrigin == null)
+        {
+            PlayerController player = FindFirstObjectByType<PlayerController>();
+            if (player != null)
+            {
+                sightOrigin = player.transform;
+            }
+        }
+
         IgnorePlayerCollisions();
         SetReactionTextVisible(false);
         SetCashChangePanelVisible(false);
@@ -190,7 +217,7 @@ public class CustomerController : MonoBehaviour
                 {
                     if (isStealer && !wasAccused)
                     {
-                        int lostCash = Random.Range(20, 51);
+                        int lostCash = Random.Range(30, 61);
                         CashSystem cashSystem = FindFirstObjectByType<CashSystem>();
                         if (cashSystem != null)
                         {
@@ -216,6 +243,8 @@ public class CustomerController : MonoBehaviour
 
     private void LateUpdate()
     {
+        UpdateSightState();
+
         if (reactionPanel == null)
         {
             if (cashChangePanel != null)
@@ -232,6 +261,151 @@ public class CustomerController : MonoBehaviour
         {
             cashChangePanel.transform.rotation = Quaternion.Euler(0f, 45f, 180f);
         }
+    }
+
+    public bool CanBeSeenByCamera()
+    {
+        return isVisibleToCamera;
+    }
+
+    private void UpdateSightState()
+    {
+        if (sightOrigin == null)
+        {
+            return;
+        }
+
+        Vector3 target = GetSightTarget();
+        Vector3 origin = sightOrigin.position + Vector3.up;
+        Vector3 direction = target - origin;
+        float distance = direction.magnitude;
+
+        if (distance <= 0.01f)
+        {
+            SetSightState(true);
+            return;
+        }
+
+        RaycastHit[] hits = Physics.RaycastAll(origin, direction.normalized, distance);
+        System.Array.Sort(hits, (first, second) => first.distance.CompareTo(second.distance));
+        bool canSeeCustomer = false;
+
+        foreach (RaycastHit hit in hits)
+        {
+            CustomerController hitCustomer = hit.collider.GetComponentInParent<CustomerController>();
+            if (hitCustomer != null)
+            {
+                canSeeCustomer = hitCustomer == this;
+                break;
+            }
+
+            if (hit.collider.GetComponentInParent<PlayerController>() != null)
+            {
+                continue;
+            }
+
+            // Any non-customer collider between the player and this customer blocks sight.
+            break;
+        }
+
+        UpdateSightTransition(canSeeCustomer);
+    }
+
+    private void UpdateSightTransition(bool canSeeCustomer)
+    {
+        if (canSeeCustomer)
+        {
+            blockedSightTimer = 0f;
+            clearSightTimer += Time.deltaTime;
+
+            if (clearSightTimer >= sightGracePeriod)
+            {
+                targetSightVisible = true;
+            }
+        }
+        else
+        {
+            clearSightTimer = 0f;
+            blockedSightTimer += Time.deltaTime;
+
+            if (blockedSightTimer >= sightGracePeriod)
+            {
+                targetSightVisible = false;
+            }
+        }
+
+        SetSightState(targetSightVisible);
+        float targetSilhouetteAmount = targetSightVisible ? 0f : 1f;
+        silhouetteAmount = Mathf.MoveTowards(
+            silhouetteAmount,
+            targetSilhouetteAmount,
+            sightTransitionSpeed * Time.deltaTime);
+
+        ApplySilhouetteVisual();
+    }
+
+    private void ApplySilhouetteVisual()
+    {
+        if (customerRenderers == null)
+        {
+            return;
+        }
+
+        foreach (Renderer customerRenderer in customerRenderers)
+        {
+            customerRenderer.GetPropertyBlock(silhouetteProperties);
+            Material material = customerRenderer.sharedMaterial;
+            if (material != null)
+            {
+                if (material.HasProperty(BaseColorProperty))
+                {
+                    Color originalColor = material.GetColor(BaseColorProperty);
+                    silhouetteProperties.SetColor(
+                        BaseColorProperty,
+                        Color.Lerp(originalColor, silhouetteColor, silhouetteAmount));
+                }
+
+                if (material.HasProperty(ColorProperty))
+                {
+                    Color originalColor = material.GetColor(ColorProperty);
+                    silhouetteProperties.SetColor(
+                        ColorProperty,
+                        Color.Lerp(originalColor, silhouetteColor, silhouetteAmount));
+                }
+            }
+
+            customerRenderer.SetPropertyBlock(silhouetteProperties);
+            silhouetteProperties.Clear();
+        }
+    }
+
+    private Vector3 GetSightTarget()
+    {
+        if (customerRenderers == null || customerRenderers.Length == 0)
+        {
+            return transform.position + Vector3.up;
+        }
+
+        Bounds bounds = customerRenderers[0].bounds;
+        foreach (Renderer customerRenderer in customerRenderers)
+        {
+            bounds.Encapsulate(customerRenderer.bounds);
+        }
+
+        return bounds.center;
+    }
+
+    private void SetSightState(bool visible)
+    {
+        if (isVisibleToCamera == visible)
+        {
+            return;
+        }
+
+        isVisibleToCamera = visible;
+
+        SetReactionTextVisible(reactionVisible && visible);
+        SetCashChangePanelVisible(cashChangeVisible && visible);
     }
 
     private bool HasReachedDestination()
@@ -310,7 +484,7 @@ public class CustomerController : MonoBehaviour
         }
 
         CashSystem cashSystem = FindFirstObjectByType<CashSystem>();
-        int earnedCash = Random.Range(20, 51);
+        int earnedCash = Random.Range(20, 41);
         if (cashSystem != null)
         {
             cashSystem.EarnCash(earnedCash);
@@ -440,14 +614,17 @@ public class CustomerController : MonoBehaviour
 
         cashChangeText.text = amount >= 0 ? $"+ ${amount}" : $"- ${Mathf.Abs(amount)}";
         cashChangeText.color = amount >= 0 ? Color.green : Color.red;
-        cashChangePanel.SetActive(true);
+        cashChangeVisible = true;
+        SetCashChangePanelVisible(true);
     }
 
     private void SetCashChangePanelVisible(bool isVisible)
     {
+        cashChangeVisible = isVisible;
+
         if (cashChangePanel != null)
         {
-            cashChangePanel.SetActive(isVisible);
+            cashChangePanel.SetActive(isVisible && isVisibleToCamera);
         }
     }
 
@@ -462,16 +639,18 @@ public class CustomerController : MonoBehaviour
 
     private void SetReactionTextVisible(bool isVisible)
     {
+        reactionVisible = isVisible;
+
         if (reactionPanel != null)
         {
-            reactionPanel.SetActive(isVisible);
+            reactionPanel.SetActive(isVisible && isVisibleToCamera);
         }
 
         if (reactionText != null)
         {
             if (reactionPanel == null)
             {
-                reactionText.gameObject.SetActive(isVisible);
+                reactionText.gameObject.SetActive(isVisible && isVisibleToCamera);
             }
         }
     }

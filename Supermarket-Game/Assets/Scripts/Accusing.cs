@@ -56,6 +56,11 @@ public class Accusing : MonoBehaviour
 
             if (distance < closestDistance)
             {
+                if (!customer.CanBeSeenByCamera())
+                {
+                    continue;
+                }
+
                 closestDistance = distance;
                 nearest = customer;
             }
