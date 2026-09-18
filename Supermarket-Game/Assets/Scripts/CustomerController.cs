@@ -13,7 +13,11 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private int maximumAisleVisits = 4;
     [SerializeField] private GameObject reactionPanel;
     [SerializeField] private TMP_Text reactionText;
+    [SerializeField] private GameObject cashChangePanel;
+    [SerializeField] private TMP_Text cashChangeText;
     [SerializeField] private GameObject carriedItem;
+    [SerializeField] private float queueWaitTime = 20f;
+    [SerializeField] private float cashChangeDisplayTime = 1.5f;
 
     private NavMeshAgent agent;
     private float browseTimer;
@@ -22,6 +26,10 @@ public class CustomerController : MonoBehaviour
     private int aisleVisits;
     private int totalAisleVisits;
     private int previousAisleIndex = -1;
+    private float queueTimer;
+    private float cashChangeTimer;
+    private bool wasAccused;
+    private bool exitCashProcessed;
 
     private enum CustomerState
     {
@@ -38,6 +46,7 @@ public class CustomerController : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         IgnorePlayerCollisions();
         SetReactionTextVisible(false);
+        SetCashChangePanelVisible(false);
         SetCarriedItemVisible(false);
     }
 
@@ -72,6 +81,8 @@ public class CustomerController : MonoBehaviour
 
     public bool IsStealer => isStealer;
     public Transform AssignedQueuePoint => assignedQueuePoint;
+    public bool IsQueued => state == CustomerState.Queued;
+    public bool IsGoingToQueue => state == CustomerState.GoingToQueue;
 
     private void Start()
     {
@@ -126,14 +137,45 @@ public class CustomerController : MonoBehaviour
         {
             agent.isStopped = true;
             state = CustomerState.Queued;
+            StartQueueTimer();
         }
         else if (state == CustomerState.Queued)
         {
             agent.isStopped = true;
+            queueTimer -= Time.deltaTime;
+
+            if (queueTimer <= 0f)
+            {
+                ShowReaction("This is taking too long!");
+                ReturnToSpawn();
+            }
         }
         else if (state == CustomerState.Returning && HasReachedDestination())
         {
-            Destroy(gameObject);
+            if (!exitCashProcessed)
+            {
+                if (isStealer && !wasAccused)
+                {
+                    int lostCash = Random.Range(20, 51);
+                    CashSystem cashSystem = FindFirstObjectByType<CashSystem>();
+                    if (cashSystem != null)
+                    {
+                        cashSystem.LoseCash(lostCash);
+                    }
+
+                    ShowCashChange(-lostCash);
+                }
+
+                exitCashProcessed = true;
+                cashChangeTimer = cashChangeDisplayTime;
+                agent.isStopped = true;
+            }
+
+            cashChangeTimer -= Time.deltaTime;
+            if (cashChangeTimer <= 0f)
+            {
+                Destroy(gameObject);
+            }
         }
     }
 
@@ -141,10 +183,20 @@ public class CustomerController : MonoBehaviour
     {
         if (reactionPanel == null)
         {
+            if (cashChangePanel != null)
+            {
+                cashChangePanel.transform.rotation = Quaternion.Euler(0f, 45f, 180f);
+            }
+
             return;
         }
 
         reactionPanel.transform.rotation = Quaternion.Euler(0f, 45f, 180f);
+
+        if (cashChangePanel != null)
+        {
+            cashChangePanel.transform.rotation = Quaternion.Euler(0f, 45f, 180f);
+        }
     }
 
     private bool HasReachedDestination()
@@ -158,6 +210,42 @@ public class CustomerController : MonoBehaviour
         agent.isStopped = false;
         agent.SetDestination(spawnPoint.position);
         state = CustomerState.Returning;
+    }
+
+    public void FulfillPurchase()
+    {
+        if (!IsQueued)
+        {
+            return;
+        }
+
+        CashSystem cashSystem = FindFirstObjectByType<CashSystem>();
+        int earnedCash = Random.Range(20, 51);
+        if (cashSystem != null)
+        {
+            cashSystem.EarnCash(earnedCash);
+        }
+
+        ShowCashChange(earnedCash);
+        ReturnToSpawn();
+    }
+
+    public void MoveToQueuePoint(Transform queuePoint)
+    {
+        if (queuePoint == null || (!IsQueued && !IsGoingToQueue))
+        {
+            return;
+        }
+
+        if (assignedQueuePoint == queuePoint)
+        {
+            return;
+        }
+
+        assignedQueuePoint = queuePoint;
+        agent.isStopped = false;
+        agent.SetDestination(queuePoint.position);
+        state = CustomerState.GoingToQueue;
     }
 
     private void FinishBrowsing()
@@ -207,7 +295,13 @@ public class CustomerController : MonoBehaviour
             ShowReaction("That is outrageous!");
         }
 
+        wasAccused = true;
         ReturnToSpawn();
+    }
+
+    private void StartQueueTimer()
+    {
+        queueTimer = queueWaitTime;
     }
 
     private void SetCarriedItemVisible(bool isVisible)
@@ -215,6 +309,26 @@ public class CustomerController : MonoBehaviour
         if (carriedItem != null)
         {
             carriedItem.SetActive(isVisible);
+        }
+    }
+
+    private void ShowCashChange(int amount)
+    {
+        if (cashChangePanel == null || cashChangeText == null)
+        {
+            return;
+        }
+
+        cashChangeText.text = amount >= 0 ? $"+ ${amount}" : $"- ${Mathf.Abs(amount)}";
+        cashChangeText.color = amount >= 0 ? Color.green : Color.red;
+        cashChangePanel.SetActive(true);
+    }
+
+    private void SetCashChangePanelVisible(bool isVisible)
+    {
+        if (cashChangePanel != null)
+        {
+            cashChangePanel.SetActive(isVisible);
         }
     }
 

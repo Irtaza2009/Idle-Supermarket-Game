@@ -23,6 +23,7 @@ public class CustomerManager : MonoBehaviour
     private void Update()
     {
         RemoveFinishedCustomers();
+        UpdateQueuePositions();
 
         if (customerPrefab == null || spawnPoint == null || activeCustomers.Count >= maxCustomers)
         {
@@ -54,6 +55,11 @@ public class CustomerManager : MonoBehaviour
 
     private Transform FindAvailableQueuePoint()
     {
+        if (queuePoints == null)
+        {
+            return null;
+        }
+
         foreach (Transform queuePoint in queuePoints)
         {
             bool occupied = false;
@@ -79,5 +85,65 @@ public class CustomerManager : MonoBehaviour
     private void RemoveFinishedCustomers()
     {
         activeCustomers.RemoveAll(customer => customer == null);
+    }
+
+    private void UpdateQueuePositions()
+    {
+        if (queuePoints == null || queuePoints.Length == 0)
+        {
+            return;
+        }
+
+        List<CustomerController> queueCustomers = new();
+        foreach (CustomerController customer in activeCustomers)
+        {
+            if (customer != null && (customer.IsQueued || customer.IsGoingToQueue))
+            {
+                queueCustomers.Add(customer);
+            }
+        }
+
+        queueCustomers.Sort((first, second) =>
+            GetQueuePointIndex(first.AssignedQueuePoint).CompareTo(GetQueuePointIndex(second.AssignedQueuePoint)));
+
+        int positionCount = Mathf.Min(queueCustomers.Count, queuePoints.Length);
+        for (int index = 0; index < positionCount; index++)
+        {
+            queueCustomers[index].MoveToQueuePoint(queuePoints[index]);
+        }
+    }
+
+    private int GetQueuePointIndex(Transform queuePoint)
+    {
+        for (int index = 0; index < queuePoints.Length; index++)
+        {
+            if (queuePoints[index] == queuePoint)
+            {
+                return index;
+            }
+        }
+
+        return queuePoints.Length;
+    }
+
+    public CustomerController GetFirstQueuedCustomer()
+    {
+        if (queuePoints == null)
+        {
+            return null;
+        }
+
+        foreach (Transform queuePoint in queuePoints)
+        {
+            foreach (CustomerController customer in activeCustomers)
+            {
+                if (customer != null && customer.AssignedQueuePoint == queuePoint && customer.IsQueued)
+                {
+                    return customer;
+                }
+            }
+        }
+
+        return null;
     }
 }

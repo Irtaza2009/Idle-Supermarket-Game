@@ -8,6 +8,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float gravity = -20f;
     [SerializeField] private float turnSpeed = 12f;
+    [SerializeField] private float groundSnapDistance = 0.15f;
 
     private CharacterController characterController;
     private float verticalVelocity;
@@ -15,6 +16,7 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
+        characterController.stepOffset = 0f;
 
         if (cameraTransform == null && Camera.main != null)
         {
@@ -29,16 +31,15 @@ public class PlayerController : MonoBehaviour
 
     private void Move()
     {
-        if (Keyboard.current == null)
+        Vector2 input = Vector2.zero;
+        if (Keyboard.current != null)
         {
-            return;
+            if (Keyboard.current.wKey.isPressed) input.y += 1f;
+            if (Keyboard.current.sKey.isPressed) input.y -= 1f;
+            if (Keyboard.current.dKey.isPressed) input.x += 1f;
+            if (Keyboard.current.aKey.isPressed) input.x -= 1f;
         }
 
-        Vector2 input = Vector2.zero;
-        if (Keyboard.current.wKey.isPressed) input.y += 1f;
-        if (Keyboard.current.sKey.isPressed) input.y -= 1f;
-        if (Keyboard.current.dKey.isPressed) input.x += 1f;
-        if (Keyboard.current.aKey.isPressed) input.x -= 1f;
         input = Vector2.ClampMagnitude(input, 1f);
 
         Vector3 cameraForward = cameraTransform != null ? cameraTransform.forward : Vector3.forward;
@@ -59,6 +60,19 @@ public class PlayerController : MonoBehaviour
         if (characterController.isGrounded && verticalVelocity < 0f)
         {
             verticalVelocity = -2f;
+        }
+
+        if (!characterController.isGrounded && verticalVelocity <= 0f &&
+            Physics.Raycast(transform.position, Vector3.down, out RaycastHit groundHit, groundSnapDistance))
+        {
+            float controllerBottom = transform.position.y + characterController.center.y - characterController.height * 0.5f;
+            float groundGap = controllerBottom - groundHit.point.y;
+
+            if (groundGap > 0f)
+            {
+                transform.position += Vector3.down * groundGap;
+                verticalVelocity = -2f;
+            }
         }
 
         verticalVelocity += gravity * Time.deltaTime;
