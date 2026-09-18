@@ -32,7 +32,7 @@ public class CheckoutSystem : MonoBehaviour
                            customerManager.GetFirstQueuedCustomer() != null;
         SetPromptVisible(canCheckout);
 
-        if (canCheckout && Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame)
+        if (canCheckout && Keyboard.current != null && (Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.spaceKey.wasPressedThisFrame))
         {
             CustomerController customer = customerManager.GetFirstQueuedCustomer();
             if (customer != null)

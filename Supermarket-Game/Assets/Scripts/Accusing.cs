@@ -33,7 +33,7 @@ public class Accusing : MonoBehaviour
 
         FindClosestCustomer();
 
-        if (closestCustomer != null && Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame)
+        if (closestCustomer != null && Keyboard.current != null && (Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.spaceKey.wasPressedThisFrame))
         {
             AccuseCustomer();
         }
