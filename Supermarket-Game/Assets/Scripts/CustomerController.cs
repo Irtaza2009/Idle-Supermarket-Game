@@ -18,6 +18,9 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private GameObject carriedItem;
     [SerializeField] private float queueWaitTime = 20f;
     [SerializeField] private float cashChangeDisplayTime = 1.5f;
+    [SerializeField] private float exitArrivalDistance = 1.25f;
+    [SerializeField] private float returnTimeout = 10f;
+    [SerializeField] private float stuckCheckTime = 1.5f;
 
     private NavMeshAgent agent;
     private float browseTimer;
@@ -28,6 +31,9 @@ public class CustomerController : MonoBehaviour
     private int previousAisleIndex = -1;
     private float queueTimer;
     private float cashChangeTimer;
+    private float returnTimer;
+    private float stuckTimer;
+    private Vector3 lastPosition;
     private bool wasAccused;
     private bool exitCashProcessed;
 
@@ -44,6 +50,8 @@ public class CustomerController : MonoBehaviour
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
+        agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+        agent.avoidancePriority = Random.Range(20, 80);
         IgnorePlayerCollisions();
         SetReactionTextVisible(false);
         SetCashChangePanelVisible(false);
@@ -86,6 +94,8 @@ public class CustomerController : MonoBehaviour
 
     private void Start()
     {
+        lastPosition = transform.position;
+
         if (spawnPoint == null)
         {
             Debug.LogWarning("CustomerController needs a spawn point.", this);
@@ -108,6 +118,8 @@ public class CustomerController : MonoBehaviour
 
     private void Update()
     {
+        CheckForStuckAgent();
+
         if (state == CustomerState.GoingToAisle && HasReachedDestination())
         {
             browseTimer = timeToBrowse;
@@ -150,31 +162,36 @@ public class CustomerController : MonoBehaviour
                 ReturnToSpawn();
             }
         }
-        else if (state == CustomerState.Returning && HasReachedDestination())
+        else if (state == CustomerState.Returning)
         {
-            if (!exitCashProcessed)
+            returnTimer -= Time.deltaTime;
+
+            if (HasReachedExit() || returnTimer <= 0f)
             {
-                if (isStealer && !wasAccused)
+                if (!exitCashProcessed)
                 {
-                    int lostCash = Random.Range(20, 51);
-                    CashSystem cashSystem = FindFirstObjectByType<CashSystem>();
-                    if (cashSystem != null)
+                    if (isStealer && !wasAccused)
                     {
-                        cashSystem.LoseCash(lostCash);
+                        int lostCash = Random.Range(20, 51);
+                        CashSystem cashSystem = FindFirstObjectByType<CashSystem>();
+                        if (cashSystem != null)
+                        {
+                            cashSystem.LoseCash(lostCash);
+                        }
+
+                        ShowCashChange(-lostCash);
                     }
 
-                    ShowCashChange(-lostCash);
+                    exitCashProcessed = true;
+                    cashChangeTimer = cashChangeDisplayTime;
+                    agent.isStopped = true;
                 }
 
-                exitCashProcessed = true;
-                cashChangeTimer = cashChangeDisplayTime;
-                agent.isStopped = true;
-            }
-
-            cashChangeTimer -= Time.deltaTime;
-            if (cashChangeTimer <= 0f)
-            {
-                Destroy(gameObject);
+                cashChangeTimer -= Time.deltaTime;
+                if (cashChangeTimer <= 0f)
+                {
+                    Destroy(gameObject);
+                }
             }
         }
     }
@@ -204,9 +221,63 @@ public class CustomerController : MonoBehaviour
         return !agent.pathPending && agent.remainingDistance <= arrivalDistance;
     }
 
+    private void CheckForStuckAgent()
+    {
+        if (state != CustomerState.GoingToAisle && state != CustomerState.GoingToQueue)
+        {
+            stuckTimer = 0f;
+            lastPosition = transform.position;
+            return;
+        }
+
+        float distanceMoved = Vector3.Distance(transform.position, lastPosition);
+        bool hasUnfinishedPath = !agent.pathPending && agent.remainingDistance > arrivalDistance;
+
+        if (hasUnfinishedPath && distanceMoved < 0.01f)
+        {
+            stuckTimer += Time.deltaTime;
+        }
+        else
+        {
+            stuckTimer = 0f;
+        }
+
+        lastPosition = transform.position;
+
+        if (stuckTimer < stuckCheckTime)
+        {
+            return;
+        }
+
+        stuckTimer = 0f;
+        agent.avoidancePriority = Random.Range(20, 80);
+
+        if (state == CustomerState.GoingToAisle)
+        {
+            GoToNextAisle();
+        }
+        else if (assignedQueuePoint != null)
+        {
+            agent.isStopped = false;
+            agent.SetDestination(assignedQueuePoint.position);
+        }
+    }
+
+    private bool HasReachedExit()
+    {
+        if (spawnPoint == null)
+        {
+            return true;
+        }
+
+        return Vector3.Distance(transform.position, spawnPoint.position) <= exitArrivalDistance ||
+               HasReachedDestination();
+    }
+
     private void ReturnToSpawn()
     {
         SetCarriedItemVisible(false);
+        returnTimer = returnTimeout;
         agent.isStopped = false;
         agent.SetDestination(spawnPoint.position);
         state = CustomerState.Returning;
