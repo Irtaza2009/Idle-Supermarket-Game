@@ -13,6 +13,7 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private int maximumAisleVisits = 4;
     [SerializeField] private GameObject reactionPanel;
     [SerializeField] private TMP_Text reactionText;
+    [SerializeField] private GameObject carriedItem;
 
     private NavMeshAgent agent;
     private float browseTimer;
@@ -26,14 +27,18 @@ public class CustomerController : MonoBehaviour
     {
         GoingToAisle,
         Browsing,
+        GoingToQueue,
+        Queued,
         Returning
     }
+    private Transform assignedQueuePoint;
 
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
         IgnorePlayerCollisions();
         SetReactionTextVisible(false);
+        SetCarriedItemVisible(false);
     }
 
     private void IgnorePlayerCollisions()
@@ -57,14 +62,16 @@ public class CustomerController : MonoBehaviour
         }
     }
 
-    public void Initialize(Transform entrance, Transform[] shoppingPoints, bool stealer)
+    public void Initialize(Transform entrance, Transform[] shoppingPoints, bool stealer, Transform queuePoint)
     {
         spawnPoint = entrance;
         aislePoints = shoppingPoints;
         isStealer = stealer;
+        assignedQueuePoint = queuePoint;
     }
 
     public bool IsStealer => isStealer;
+    public Transform AssignedQueuePoint => assignedQueuePoint;
 
     private void Start()
     {
@@ -106,7 +113,7 @@ public class CustomerController : MonoBehaviour
 
                 if (aisleVisits >= totalAisleVisits)
                 {
-                    ReturnToSpawn();
+                    FinishBrowsing();
                 }
                 else
                 {
@@ -114,6 +121,15 @@ public class CustomerController : MonoBehaviour
                     state = CustomerState.GoingToAisle;
                 }
             }
+        }
+        else if (state == CustomerState.GoingToQueue && HasReachedDestination())
+        {
+            agent.isStopped = true;
+            state = CustomerState.Queued;
+        }
+        else if (state == CustomerState.Queued)
+        {
+            agent.isStopped = true;
         }
         else if (state == CustomerState.Returning && HasReachedDestination())
         {
@@ -138,9 +154,24 @@ public class CustomerController : MonoBehaviour
 
     private void ReturnToSpawn()
     {
+        SetCarriedItemVisible(false);
         agent.isStopped = false;
         agent.SetDestination(spawnPoint.position);
         state = CustomerState.Returning;
+    }
+
+    private void FinishBrowsing()
+    {
+        if (isStealer || assignedQueuePoint == null)
+        {
+            ReturnToSpawn();
+            return;
+        }
+
+        SetCarriedItemVisible(true);
+        agent.isStopped = false;
+        agent.SetDestination(assignedQueuePoint.position);
+        state = CustomerState.GoingToQueue;
     }
 
     private void GoToNextAisle()
@@ -177,6 +208,14 @@ public class CustomerController : MonoBehaviour
         }
 
         ReturnToSpawn();
+    }
+
+    private void SetCarriedItemVisible(bool isVisible)
+    {
+        if (carriedItem != null)
+        {
+            carriedItem.SetActive(isVisible);
+        }
     }
 
     private void ShowReaction(string message)
