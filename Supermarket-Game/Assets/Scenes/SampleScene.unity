@@ -3923,10 +3923,10 @@ MonoBehaviour:
   - {fileID: 904290285}
   - {fileID: 1461300317}
   - {fileID: 1444648788}
-  spawnInterval: 5
+  spawnInterval: 2
   maxCustomers: 5
-  honestQueueChance: 0.8
-  spawnImmediately: 1
+  honestQueueChance: 0.7
+  spawnImmediately: 0
 --- !u!4 &91434113160271635
 Transform:
   m_ObjectHideFlags: 0

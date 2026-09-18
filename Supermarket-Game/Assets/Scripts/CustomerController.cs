@@ -21,6 +21,8 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private float exitArrivalDistance = 1.25f;
     [SerializeField] private float returnTimeout = 10f;
     [SerializeField] private float stuckCheckTime = 1.5f;
+    [SerializeField, Range(0f, 1f)] private float stealChance = 0.2f;
+    [SerializeField] private float stealDisplayTime = 1f;
 
     private NavMeshAgent agent;
     private float browseTimer;
@@ -34,8 +36,11 @@ public class CustomerController : MonoBehaviour
     private float returnTimer;
     private float stuckTimer;
     private Vector3 lastPosition;
+    private float stealTimer;
     private bool wasAccused;
     private bool exitCashProcessed;
+    private bool hasAttemptedSteal;
+    private bool isStealing;
 
     private enum CustomerState
     {
@@ -125,9 +130,20 @@ public class CustomerController : MonoBehaviour
             browseTimer = timeToBrowse;
             state = CustomerState.Browsing;
             agent.isStopped = true;
+            TrySteal();
         }
         else if (state == CustomerState.Browsing)
         {
+            if (isStealing)
+            {
+                stealTimer -= Time.deltaTime;
+                if (stealTimer <= 0f)
+                {
+                    isStealing = false;
+                    SetReactionTextVisible(false);
+                }
+            }
+
             browseTimer -= Time.deltaTime;
 
             if (browseTimer <= 0f)
@@ -140,6 +156,7 @@ public class CustomerController : MonoBehaviour
                 }
                 else
                 {
+                    SetReactionTextVisible(false);
                     GoToNextAisle();
                     state = CustomerState.GoingToAisle;
                 }
@@ -154,6 +171,7 @@ public class CustomerController : MonoBehaviour
         else if (state == CustomerState.Queued)
         {
             agent.isStopped = true;
+            UpdateQueueCountdownText();
             queueTimer -= Time.deltaTime;
 
             if (queueTimer <= 0f)
@@ -277,6 +295,7 @@ public class CustomerController : MonoBehaviour
     private void ReturnToSpawn()
     {
         SetCarriedItemVisible(false);
+        assignedQueuePoint = null;
         returnTimer = returnTimeout;
         agent.isStopped = false;
         agent.SetDestination(spawnPoint.position);
@@ -333,6 +352,25 @@ public class CustomerController : MonoBehaviour
         state = CustomerState.GoingToQueue;
     }
 
+    private void TrySteal()
+    {
+        if (hasAttemptedSteal)
+        {
+            return;
+        }
+
+        hasAttemptedSteal = true;
+        if (Random.value >= stealChance)
+        {
+            return;
+        }
+
+        isStealer = true;
+        isStealing = true;
+        stealTimer = stealDisplayTime;
+        ShowReaction("Stealing...");
+    }
+
     private void GoToNextAisle()
     {
         int nextAisleIndex = Random.Range(0, aislePoints.Length);
@@ -373,6 +411,16 @@ public class CustomerController : MonoBehaviour
     private void StartQueueTimer()
     {
         queueTimer = queueWaitTime;
+        UpdateQueueCountdownText();
+        SetReactionTextVisible(true);
+    }
+
+    private void UpdateQueueCountdownText()
+    {
+        if (reactionText != null)
+        {
+            reactionText.text = Mathf.CeilToInt(Mathf.Max(0f, queueTimer)).ToString();
+        }
     }
 
     private void SetCarriedItemVisible(bool isVisible)

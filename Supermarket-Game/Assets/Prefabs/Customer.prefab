@@ -438,7 +438,7 @@ MonoBehaviour:
   - {fileID: 0}
   timeToBrowse: 3
   arrivalDistance: 0.4
-  minimumAisleVisits: 2
+  minimumAisleVisits: 1
   maximumAisleVisits: 4
   reactionPanel: {fileID: 4677568562622456100}
   reactionText: {fileID: 6217002510184391267}
@@ -447,6 +447,11 @@ MonoBehaviour:
   carriedItem: {fileID: 2736191660189048259}
   queueWaitTime: 20
   cashChangeDisplayTime: 1.5
+  exitArrivalDistance: 1.25
+  returnTimeout: 10
+  stuckCheckTime: 1.5
+  stealChance: 0.35
+  stealDisplayTime: 1
 --- !u!136 &4563473390054359921
 CapsuleCollider:
   m_ObjectHideFlags: 0
