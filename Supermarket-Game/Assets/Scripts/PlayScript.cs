@@ -7,4 +7,9 @@ public class PlayScript : MonoBehaviour
         int NextSceneIndex = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex + 1;
         UnityEngine.SceneManagement.SceneManager.LoadScene(NextSceneIndex);
     }
+
+    public void TryAgain()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadScene("MainScene");
+    }
 }
