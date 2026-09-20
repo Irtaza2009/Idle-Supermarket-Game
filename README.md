@@ -4,7 +4,7 @@ You play as a cashier in a supermarket, BUT you also have to prevent shoplifters
 
 Be careful though, wrongfully accusing customers of theft can lower your super market's rating, and you will lose. And not preventing shoplifters can make you go bankrupt, and you lose...
 
-**Play here:** itch.io link here after i make the page...
+**Play here:** https://irtaza.itch.io/catch-the-shoplifter
 
 The game is built completely from scratch in Unity! All assets and 3d models have been made by us (read: made by [Aayan](https://github.com/MuhammadAayanMirza) lol, I am not that good at 3d modelling)!
 
