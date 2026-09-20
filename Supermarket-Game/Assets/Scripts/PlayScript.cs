@@ -12,4 +12,9 @@ public class PlayScript : MonoBehaviour
     {
         UnityEngine.SceneManagement.SceneManager.LoadScene("MainScene");
     }
+
+    public void ReturnToMenu()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadScene("TitleScreen");
+    }
 }
