@@ -26,8 +26,7 @@ public class Accusing : MonoBehaviour
     {
         if (checkoutSystem != null && checkoutSystem.IsPlayerInside)
         {
-            closestCustomer = null;
-            SetAccusePromptVisible(false);
+            ClearSelectedCustomer();
             return;
         }
 
@@ -68,12 +67,20 @@ public class Accusing : MonoBehaviour
 
         if (nearest != closestCustomer)
         {
+            if (closestCustomer != null)
+            {
+                closestCustomer.SetAccuseHighlighted(false);
+            }
             closestCustomer = nearest;
+
+            if (closestCustomer != null)
+            {
+                closestCustomer.SetAccuseHighlighted(true);
+            }
+
             SetAccusePromptVisible(closestCustomer != null);
         }
     }
-
-
 
     public void AccuseCustomer()
     {
@@ -82,12 +89,23 @@ public class Accusing : MonoBehaviour
 
         CustomerController accusedCustomer = closestCustomer;
 
+        accusedCustomer.SetAccuseHighlighted(false);
         accusedCustomer.Accused();
+
         if (ratingSystem != null)
         {
             ratingSystem.RecordAccusation(accusedCustomer.IsStealer);
         }
 
+        ClearSelectedCustomer();
+    }
+
+    private void ClearSelectedCustomer()
+    {
+        if (closestCustomer != null)
+        {
+            closestCustomer.SetAccuseHighlighted(false);
+        }
         closestCustomer = null;
         SetAccusePromptVisible(false);
     }

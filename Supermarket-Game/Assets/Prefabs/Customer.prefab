@@ -488,6 +488,9 @@ MonoBehaviour:
   silhouetteColor: {r: 0.2668463, g: 0.2668463, b: 0.2668463, a: 1}
   sightTransitionSpeed: 4
   sightGracePeriod: 0.15
+  accuseHighlightColor: {r: 1, g: 0.81960785, b: 0.4, a: 1}
+  accuseHighlightStrength: 0.5
+  accuseHighlightTransitionSpeed: 8
 --- !u!136 &4563473390054359921
 CapsuleCollider:
   m_ObjectHideFlags: 0

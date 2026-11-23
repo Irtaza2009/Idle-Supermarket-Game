@@ -28,6 +28,14 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private float sightTransitionSpeed = 6f;
     [SerializeField] private float sightGracePeriod = 0.12f;
 
+    [Header("Selection Highlight")]
+    [SerializeField] private Color accuseHighlightColor = Color.red;
+    [SerializeField, Range(0f, 1f)] private float accuseHighlightStrength = 0.35f;
+    [SerializeField] private float accuseHighlightTransitionSpeed = 8f;
+
+    private bool isAccuseHighlighted;
+    private float accuseHighlightAmount;
+
     private NavMeshAgent agent;
     private float browseTimer;
     private CustomerState state;
@@ -244,6 +252,7 @@ public class CustomerController : MonoBehaviour
     private void LateUpdate()
     {
         UpdateSightState();
+        UpdateAccuseHighlight();
 
         if (reactionPanel == null)
         {
@@ -360,23 +369,28 @@ public class CustomerController : MonoBehaviour
                 if (material.HasProperty(BaseColorProperty))
                 {
                     Color originalColor = material.GetColor(BaseColorProperty);
-                    silhouetteProperties.SetColor(
-                        BaseColorProperty,
-                        Color.Lerp(originalColor, silhouetteColor, silhouetteAmount));
+                    Color finalColor = GetCustomerVisualColor(originalColor);
+                    silhouetteProperties.SetColor(BaseColorProperty, finalColor);
                 }
 
                 if (material.HasProperty(ColorProperty))
                 {
                     Color originalColor = material.GetColor(ColorProperty);
-                    silhouetteProperties.SetColor(
-                        ColorProperty,
-                        Color.Lerp(originalColor, silhouetteColor, silhouetteAmount));
+                    Color finalColor = GetCustomerVisualColor(originalColor);
+                    silhouetteProperties.SetColor(ColorProperty, finalColor);
                 }
             }
 
             customerRenderer.SetPropertyBlock(silhouetteProperties);
             silhouetteProperties.Clear();
         }
+    }
+
+    private Color GetCustomerVisualColor(Color originalColor)
+    {
+        Color color = Color.Lerp(originalColor, silhouetteColor, silhouetteAmount);
+        color = Color.Lerp(color, accuseHighlightColor, accuseHighlightAmount * accuseHighlightStrength);
+        return color;
     }
 
     private Vector3 GetSightTarget()
@@ -680,5 +694,22 @@ public class CustomerController : MonoBehaviour
                 reactionText.gameObject.SetActive(isVisible && isVisibleToCamera);
             }
         }
+    }
+
+    public void SetAccuseHighlighted(bool highlighted)
+    {
+        isAccuseHighlighted = highlighted;
+    }
+
+    private void UpdateAccuseHighlight()
+    {
+        float targetAmount = isAccuseHighlighted ? 1f : 0f;
+
+        accuseHighlightAmount = Mathf.MoveTowards(
+            accuseHighlightAmount,
+            targetAmount,
+            accuseHighlightTransitionSpeed * Time.deltaTime);
+
+        ApplySilhouetteVisual();
     }
 }
