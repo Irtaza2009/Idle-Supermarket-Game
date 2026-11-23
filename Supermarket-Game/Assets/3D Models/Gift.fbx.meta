@@ -3,7 +3,17 @@ guid: 61f5b1568435847c3acdd270cd418d8f
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Aluminum - Anodized Rough (Blue)
+    second: {fileID: -4492721337063221498, guid: e2e7e3e4784e54209bfa154ce02efd2a, type: 3}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: LED - SMD 5050 - 20lm (White)
+    second: {fileID: 4044675170815377999, guid: 7939105204d5a41a28b6acb89add6841, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0

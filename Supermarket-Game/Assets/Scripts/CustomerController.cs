@@ -72,7 +72,7 @@ public class CustomerController : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
         agent.avoidancePriority = Random.Range(20, 80);
-        customerRenderers = GetComponentsInChildren<Renderer>(true);
+        customerRenderers = GetCustomerRenderers();
         silhouetteProperties = new MaterialPropertyBlock();
 
         if (sightOrigin == null)
@@ -597,11 +597,38 @@ public class CustomerController : MonoBehaviour
         }
     }
 
+    private Renderer[] GetCustomerRenderers()
+    {
+        Renderer[] allRenderers = GetComponentsInChildren<Renderer>(true);
+        var customerOnlyRenderers = new System.Collections.Generic.List<Renderer>();
+
+        foreach (Renderer renderer in allRenderers)
+        {
+            if (carriedItem != null && renderer.transform.IsChildOf(carriedItem.transform))
+            {
+                continue;
+            }
+
+            customerOnlyRenderers.Add(renderer);
+        }
+
+        return customerOnlyRenderers.ToArray();
+    }
+
     private void SetCarriedItemVisible(bool isVisible)
     {
         if (carriedItem != null)
         {
             carriedItem.SetActive(isVisible);
+
+            if (isVisible)
+            {
+                Renderer[] itemRenderers = carriedItem.GetComponentsInChildren<Renderer>(true);
+                foreach (Renderer itemRenderer in itemRenderers)
+                {
+                    itemRenderer.SetPropertyBlock(null);
+                }
+            }
         }
     }
 
