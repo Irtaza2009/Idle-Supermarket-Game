@@ -269,7 +269,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: You were overwhelmed :(
+  m_text: 'You were overwhelmed
+
+    :('
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: df8745c3f23ce4dc19c4d58ef2d5657c, type: 2}
   m_sharedMaterial: {fileID: -977252334753153078, guid: df8745c3f23ce4dc19c4d58ef2d5657c, type: 2}
